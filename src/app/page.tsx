@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 //import { useRouter } from 'next/router';
 import Chat from "./components/Chat";
 import io from 'socket.io-client';
-const socket = io('http://54.167.45.167:3001');
+const socket = io('https://socket-io-group-backend.vercel.app/');
 
 function Home() {
   //const router = useRouter();
