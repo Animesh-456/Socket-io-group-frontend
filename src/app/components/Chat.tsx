@@ -1,8 +1,8 @@
 
-import React, { ReactHTMLElement, useState, useEffect, useMemo } from 'react'
+import React, { ReactHTMLElement, useState, useEffect, useMemo, useCallback } from 'react'
 import dynamic from 'next/dynamic';
-import Audiochat from './Audiochat';
 import ReactPlayer from 'react-player';
+import Videochat from './Videochat';
 const EmojiPickerComponent = dynamic(() => import('emoji-picker-react'), {
     ssr: false
 });
@@ -31,17 +31,12 @@ const Chat = ({ socket, username, room }: any) => {
     const [messageList, setMessageList]: any = useState([]);
     const [userjoin, setuserjoin]: any = useState([]);
     const [incomingOffer, setIncomingOffer]: any = useState(null);
-
     const [showPicker, setShowPicker] = useState(false);
-
     const [incomingCallState, setincomingCallState] = useState(false)
     const [callingUsername, setcallingUsername] = useState("");
+    const [videostate, setvideostate] = useState(false)
+    const [callto, setcallto] = useState(null);
 
-
-
-
-    const [localStreamURL, setLocalStreamURL]: any = useState('');
-    const [remoteStreamURL, setRemoteStreamURL]: any = useState('');
 
     const handlePicker = () => {
         setShowPicker(!showPicker)
@@ -94,15 +89,9 @@ const Chat = ({ socket, username, room }: any) => {
         }
 
         const handleIncomingcall = async (data: any) => {
-            //const caller = await userjoin.find((obj: any) => obj.socketId === data.from)
-            //console.log(caller)
             await setIncomingOffer(data.offer)
             await setcallingUsername(data.from)
-            //alert(`Call from ${data.from}`)
             await setincomingCallState(true)
-
-            // Turn on camera when you accept the call
-
 
         }
 
@@ -112,6 +101,7 @@ const Chat = ({ socket, username, room }: any) => {
             await peer.setRemoteDescription(data.answer)
             setincomingCallState(false)
             console.log(" Call got accepted")
+            setvideostate(true)
 
         }
 
@@ -135,8 +125,7 @@ const Chat = ({ socket, username, room }: any) => {
             socket.off("incoming-call", handleIncomingcall);
             socket.off("call-accepted", hndlecallAccepted)
         };
-    }, [socket, messageList]); // Include 'socket' and 'messageList' in the dependency array
-
+    }, [socket, messageList]);
 
 
     const handleEmojiInsertion = (emoji: string) => {
@@ -165,62 +154,29 @@ const Chat = ({ socket, username, room }: any) => {
 
 
     const handleAudiocall = async (socketId: any) => {
+
         const offer = await peer.createOffer();
         await peer.setLocalDescription(offer);
         await socket.emit('call-user', { socketId: socketId, offer: offer })
+        setcallto(socketId)
 
-
-
-
-
-
-
-        // Get local media stream
-        const localStream: any = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        setLocalStreamURL(localStream)
-
-        // Add local stream to peer connection
-        localStream.getTracks().forEach((track: any) => {
-            peer.addTrack(track, localStream);
-        });
-
-        peer.ontrack = (event) => {
-            setRemoteStreamURL(event.streams[0]); // Assuming there's only one stream
-        };
-
-
-        setRemoteStreamURL(localStream);
     }
 
 
     const handlecreateAnswer = async (offer: any) => {
         await peer.setRemoteDescription(incomingOffer)
+
         const answer = await peer.createAnswer();
         await peer.setLocalDescription(answer)
 
         await socket.emit("call-accepted", { socketId: offer, answer: answer })
 
         setincomingCallState(false)
-
-
-        const localStream: any = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        setLocalStreamURL(localStream)
-
-        // Add local stream to peer connection
-        localStream.getTracks().forEach((track: any) => {
-            peer.addTrack(track, localStream);
-        });
-
-        peer.ontrack = (event) => {
-            setRemoteStreamURL(event.streams[0]); // Assuming there's only one stream
-        };
-
-        setRemoteStreamURL(localStream);
-
-        // emit answer
+        setvideostate(true)
     }
 
     console.log("users in room", userjoin)
+
 
 
     return (
@@ -263,41 +219,16 @@ const Chat = ({ socket, username, room }: any) => {
                     <div className="container mx-auto flex flex-col h-screen m-0 p-0 overflow-auto">
 
 
-                        <div className='bg-gray-900 w-full h-1/2 flex flex-row gap-2'>
-                            <div>
-                                {localStreamURL != null && (
-                                    <>
-                                        <ReactPlayer url={localStreamURL} playing muted />
-                                    </>
-                                )}
+                        {videostate && (
+                            <div className='bg-gray-900 w-full h-1/2 flex flex-row gap-2'>
+                                <Videochat peer={peer} socket={socket} callto= {callto} />
                             </div>
-                            <div>
-                                {remoteStreamURL != null && (
-                                    <>
-                                        <ReactPlayer url={remoteStreamURL} playing />
-                                    </>
-                                )}
-                            </div>
-                        </div>
+                        )}
 
                         <div className='flex flex-row justify-between h-1/6 items-center px-8 bg-gray-800 border-2 border-gray-700'>
                             <div className='flex font-bold text-lg'><h1>Group Name</h1></div>
                             <div className='flex flex-row justify-between gap-5 items-center'>
-                                {/* <div>
-                                    <button onClick={handleAudiocall} >
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z" />
-                                        </svg>
-                                    </button>
-                                </div>
-                                <div>
 
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-                                    </svg>
-
-
-                                </div> */}
                                 <div><button onClick={handleLeaveChat} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 border border-red-700 rounded">
                                     Leave Chat
                                 </button></div>
@@ -337,27 +268,6 @@ const Chat = ({ socket, username, room }: any) => {
                                         </>
                                     );
                                 })}
-
-
-
-
-
-
-
-
-
-
-                                {/* {audioCalllist?.map((a: any) => {
-                            return (
-                                <>
-                                    Join voice chat room
-                                    <button className='bg-red-500 w-1/4' onClick={() => joinaudiocall(a.room)}>{a.room}</button>
-                                </>
-                            )
-                        })} */}
-
-
-
 
 
 
