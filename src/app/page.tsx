@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 //import { useRouter } from 'next/router';
 import Chat from "./components/Chat";
 import io from 'socket.io-client';
-// const socket = io('https://socket-io-group-backend-new.onrender.com/');
+//const socket = io('http://localhost:3001');
 
-const socket = io('https://master--socket-backend.netlify.app/');
+const socket = io('https://socket-io-group-backend.onrender.com');
 function Home() {
   //const router = useRouter();
   const [username, setUsername] = useState("");

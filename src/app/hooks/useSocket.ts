@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = 'https://socket-backend.netlify.app';
+const SOCKET_URL = 'https://socket-io-group-backend.onrender.com';
 
 export const useSocket = (): Socket => {
     const socketRef = useRef<Socket | null>(null);
