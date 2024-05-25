@@ -1,5 +1,4 @@
-
-import React, { ReactHTMLElement, useState, useEffect, useMemo, useCallback } from 'react'
+import React, { ReactHTMLElement, useState, useEffect, useMemo, useRef } from 'react'
 import dynamic from 'next/dynamic';
 import ReactPlayer from 'react-player';
 import Videochat from './Videochat';
@@ -44,9 +43,17 @@ const Chat = ({ socket, username, room }: any) => {
 
     //const [message, setMessage] = useState("");
 
-    const handleMessage = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setCurrentMessage(e.target.value)
+    const handleMessage = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        if (e.nativeEvent instanceof KeyboardEvent && e.nativeEvent.key === 'Enter' && e.nativeEvent.shiftKey) {
+            // Append a newline character to the current message
+            setCurrentMessage((prevMessage: any) => prevMessage + '\n');
+        } else {
+            setCurrentMessage(e.target.value);
+        }
     }
+
+
+    console.log("message text", currentMessage)
 
 
     // Send message 
@@ -179,6 +186,29 @@ const Chat = ({ socket, username, room }: any) => {
 
 
 
+    const handleKeyDown = async (event: any) => {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault(); // Prevent default action for Enter key (e.g., form submission)
+            try {
+                sendMessage()
+            } catch (error) {
+                console.error('Error during API call', error);
+            }
+        }
+    };
+
+    const messageListRef = useRef<HTMLDivElement>(null);
+
+    const scrollToBottom = () => {
+        messageListRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messageList]);
+
+
+
     return (
         <>
 
@@ -221,12 +251,12 @@ const Chat = ({ socket, username, room }: any) => {
 
                         {videostate && (
                             <div className='bg-gray-900 w-full h-1/2 flex flex-row gap-2'>
-                                <Videochat peer={peer} socket={socket} callto= {callto} />
+                                <Videochat peer={peer} socket={socket} callto={callto} />
                             </div>
                         )}
 
                         <div className='flex flex-row justify-between h-1/6 items-center px-8 bg-gray-800 border-2 border-gray-700'>
-                            <div className='flex font-bold text-lg'><h1>Group Name</h1></div>
+                            <div className='flex font-bold text-lg'><h1>Room Number : - {room}</h1></div>
                             <div className='flex flex-row justify-between gap-5 items-center'>
 
                                 <div><button onClick={handleLeaveChat} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 border border-red-700 rounded">
@@ -247,7 +277,7 @@ const Chat = ({ socket, username, room }: any) => {
                                     return (
                                         <>
 
-                                            <div className={`flex items-center ${messageContent?.author === username ? "justify-end" : "justify-start"} `}>
+                                            <div ref={messageListRef} className={`flex items-center ${messageContent?.author === username ? "justify-end" : "justify-start"} `}>
                                                 <div className="flex items-start gap-2.5">
                                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8">
                                                         <path fillRule="evenodd" d="M18.685 19.097A9.723 9.723 0 0 0 21.75 12c0-5.385-4.365-9.75-9.75-9.75S2.25 6.615 2.25 12a9.723 9.723 0 0 0 3.065 7.097A9.716 9.716 0 0 0 12 21.75a9.716 9.716 0 0 0 6.685-2.653Zm-12.54-1.285A7.486 7.486 0 0 1 12 15a7.486 7.486 0 0 1 5.855 2.812A8.224 8.224 0 0 1 12 20.25a8.224 8.224 0 0 1-5.855-2.438ZM15.75 9a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0Z" clipRule="evenodd" />
@@ -258,7 +288,11 @@ const Chat = ({ socket, username, room }: any) => {
                                                             <span className={`text-sm font-normal text-gray-500 dark:text-gray-400`}>{messageContent?.time}</span>
                                                         </div>
                                                         <div className={`lex flex-col leading-1.5 p-4   rounded-e-xl rounded-es-xl ${messageContent?.author === username ? "dark:bg-blue-700" : "dark:bg-gray-700"} `}>
-                                                            <p className="text-sm font-normal text-gray-900 dark:text-white">{messageContent?.message}</p>
+                                                            <pre className="text-sm font-sans text-gray-900 dark:text-white" style={{ overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
+                                                                {messageContent?.message}
+                                                            </pre>
+
+
                                                         </div>
                                                     </div>
                                                 </div>
@@ -318,12 +352,22 @@ const Chat = ({ socket, username, room }: any) => {
 
 
 
-                        <div className="flex items-center px-4 py-2 gap-2">
+                        <div className="flex items-center px-4 py-4 gap-2">
 
 
-                            <input type="text" id="input-field" value={currentMessage} onChange={handleMessage} placeholder="Type your message..." className="flex-grow border-gray-300 text-black border-2 rounded-full py-2 px-4 mr-2 focus:outline-none focus:border-blue-500" />
+                            {/* <input onKeyDown={handleKeyDown} type="text" id="input-field" value={currentMessage} onChange={handleMessage} placeholder="Type your message..." className="flex-grow border-gray-300 text-black border-2 rounded-full py-2 px-4 mr-2 focus:outline-none focus:border-blue-500" /> */}
 
 
+                            <textarea
+                                id="input-field"
+                                value={currentMessage}
+                                onChange={handleMessage}
+                                onKeyDown={handleKeyDown}
+                                placeholder="Type your message..."
+                                className="bg-gray-900 flex-grow border-gray-700 text-white border-2 rounded-full py-2 px-4 mr-2 focus:outline-none focus:border-white"
+                                rows={1} // Adjust the number of rows as needed
+                                style={{ width: '100%', resize: 'none' }} // Adjust the width and disable resize if needed
+                            />
 
 
 
