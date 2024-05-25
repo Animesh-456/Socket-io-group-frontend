@@ -207,7 +207,10 @@ const Chat = ({ socket, username, room }: any) => {
         scrollToBottom();
     }, [messageList]);
 
-
+    const formatMessage = (message: string) => {
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return message.replace(urlRegex, (url) => `<a href="${url}" target="_blank">${url}</a>`);
+    };
 
     return (
         <>
@@ -289,7 +292,8 @@ const Chat = ({ socket, username, room }: any) => {
                                                         </div>
                                                         <div className={`lex flex-col leading-1.5 p-4   rounded-e-xl rounded-es-xl ${messageContent?.author === username ? "dark:bg-blue-700" : "dark:bg-gray-700"} `}>
                                                             <pre className="text-sm font-sans text-gray-900 dark:text-white" style={{ overflowX: 'auto', whiteSpace: 'pre-wrap' }}>
-                                                                {messageContent?.message}
+                                                                {/* Render formatted message with clickable links */}
+                                                                <span dangerouslySetInnerHTML={{ __html: formatMessage(messageContent?.message) }} />
                                                             </pre>
 
 
