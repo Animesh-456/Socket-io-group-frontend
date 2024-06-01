@@ -38,13 +38,13 @@ function Home() {
 
       {/* <div className="flex flex-col justify-center items-center mt-12 md:flex-row"> */}
 
-      <div className="w-full justify-start mt-12">
+      <div >
         <div>
           {!showChat ? (
 
             <>
 
-              <div className="flex flex-col md:flex-row">
+              <div className="flex flex-col md:flex-row mt-12">
                 <div className="flex flex-col w-full justify-end items-center">
                   <div>
                     <p className="fade-in-zoom" style={{ fontSize: "35px", fontWeight: "bolder" }}>
