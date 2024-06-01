@@ -46,13 +46,15 @@ const Videochat = ({ socket, peer, callto }: any) => {
     }, [peer, handleNegotiation, handleCall]);
 
     return (
-        <div className='bg-gray-900 w-full h-1/2 flex flex-row gap-2'>
-            <div>
+        <div className='bg-gray-900 w-full h-1/4 flex flex-row justify-center items-center gap-2'>
+            <div className='h-screen w-1/2'>
                 {localStream && (
                     <video
+                        className='h-full w-full'
                         autoPlay
                         muted
                         playsInline
+                        // Inline styles for fixed dimensions
                         ref={video => {
                             if (video) {
                                 video.srcObject = localStream;
@@ -61,11 +63,12 @@ const Videochat = ({ socket, peer, callto }: any) => {
                     />
                 )}
             </div>
-            <div>
+            <div className='h-screen w-1/2'>
                 {remoteStream && (
                     <video
                         autoPlay
                         playsInline
+                        className='h-full w-ful'// Inline styles for fixed dimensions
                         ref={video => {
                             if (video) {
                                 video.srcObject = remoteStream;
